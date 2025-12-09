@@ -1,0 +1,44 @@
+name: vikunja
+description: Task-Management via Vikunja API (Lean JSON)
+skill_description: Task management in Vikunja. Create, update, delete, list tasks, projects, and labels.
+version: 1.0.0
+
+# Variables die im TUI konfiguriert werden
+variables:
+  - name: VIKUNJA_URL
+    label: API URL
+    description: URL zur Vikunja API (mit /api/v1)
+    required: true
+    placeholder: "https://your-instance.com/api/v1"
+    type: string
+
+  - name: VIKUNJA_TOKEN
+    label: API Token
+    description: Vikunja API Token (beginnt mit tk_)
+    required: true
+    placeholder: "tk_your_api_token"
+    type: secret
+
+# Build-Konfiguration
+build:
+  # Go-Modul relativ zum Skill-Ordner
+  entry: "."
+  # Output-Binary Name
+  binary: vikunja
+
+# Deploy-Konfiguration
+deploy:
+  # Dateien die deployed werden
+  files:
+    - source: "bin/{{binary}}"
+      target: "bin/{{binary}}"
+    - source: "SKILL.md"
+      target: "SKILL.md"
+
+  # Wrapper-Script mit ENV-Variablen generieren
+  wrapper: true
+
+# Dokumentation
+docs:
+  template: SKILL.template.md
+  output: SKILL.md

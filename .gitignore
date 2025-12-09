@@ -1,0 +1,18 @@
+# Build artifacts
+/dist/
+/skillfactory
+*.exe
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Environment files (contain secrets)
+.env
+*.env
+
+# Skills build output (deployed elsewhere)
+skills/*/bin/
