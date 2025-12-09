@@ -6,21 +6,26 @@ import "github.com/charmbracelet/lipgloss"
 var (
 	// Colors
 	primaryColor   = lipgloss.Color("#7C3AED") // Purple
+	accentColor    = lipgloss.Color("#A78BFA") // Light Purple
+	highlightColor = lipgloss.Color("#C4B5FD") // Even lighter purple
 	secondaryColor = lipgloss.Color("#10B981") // Green
 	mutedColor     = lipgloss.Color("#6B7280") // Gray
 	errorColor     = lipgloss.Color("#EF4444") // Red
 	successColor   = lipgloss.Color("#10B981") // Green
+	darkBgColor    = lipgloss.Color("#1E1B4B") // Dark purple background
 
-	// Styles
+	// Header styles (like Claude Code)
+	logoStyle = lipgloss.NewStyle().
+			Foreground(primaryColor)
+
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(primaryColor).
-			MarginBottom(1)
+			Foreground(lipgloss.Color("#FFFFFF"))
 
 	subtitleStyle = lipgloss.NewStyle().
-			Foreground(mutedColor).
-			MarginBottom(1)
+			Foreground(accentColor)
 
+	// Content styles
 	selectedStyle = lipgloss.NewStyle().
 			Foreground(primaryColor).
 			Bold(true)
@@ -47,6 +52,9 @@ var (
 			Bold(true)
 
 	helpStyle = lipgloss.NewStyle().
+			Foreground(mutedColor)
+
+	versionStyle = lipgloss.NewStyle().
 			Foreground(mutedColor).
-			MarginTop(1)
+			Faint(true)
 )

@@ -14,9 +14,15 @@ func (m Model) View() string {
 
 	var b strings.Builder
 
-	// Header
+	// Header (like Claude Code style)
+	b.WriteString(logoStyle.Render("⚙"))
+	b.WriteString("  ")
 	b.WriteString(titleStyle.Render("Claude SkillFactory"))
-	b.WriteString(mutedStyle.Render("  " + m.version))
+	b.WriteString(" ")
+	b.WriteString(versionStyle.Render(m.version))
+	b.WriteString("\n")
+	b.WriteString("   ")
+	b.WriteString(subtitleStyle.Render("Build & deploy skills for Claude Code"))
 	b.WriteString("\n\n")
 
 	// Main content based on current view
