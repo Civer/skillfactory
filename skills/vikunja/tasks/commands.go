@@ -18,24 +18,46 @@ func RegisterCommands(c *client.Client, printJSON func(interface{}) error) *cobr
 		Short: "Manage tasks",
 	}
 
-	// Shared flags
-	var projectID int64
-
 	// list
-	var showAll bool
+	var listProjectID int64
+	var listShowAll bool
+	var listFilter string
+	var listSearch string
+	var listSortBy string
+	var listOrderBy string
 	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List tasks",
+		Long: `List tasks with optional filters.
+
+Filter examples (Vikunja filter syntax):
+  --filter "priority >= 3"
+  --filter "due_date < now"
+  --filter "assignees in user1"
+
+See https://vikunja.io/docs/filters for full filter documentation.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			tasks, err := service.List(projectID, showAll)
+			opts := ListOptions{
+				ProjectID:   listProjectID,
+				IncludeDone: listShowAll,
+				Filter:      listFilter,
+				Search:      listSearch,
+				SortBy:      listSortBy,
+				OrderBy:     listOrderBy,
+			}
+			tasks, err := service.List(opts)
 			if err != nil {
 				return err
 			}
 			return printJSON(ToLeanSlice(tasks))
 		},
 	}
-	listCmd.Flags().Int64VarP(&projectID, "project", "p", 0, "Filter by project ID")
-	listCmd.Flags().BoolVar(&showAll, "all", false, "Include done tasks")
+	listCmd.Flags().Int64VarP(&listProjectID, "project", "p", 0, "Filter by project ID")
+	listCmd.Flags().BoolVar(&listShowAll, "all", false, "Include done tasks")
+	listCmd.Flags().StringVarP(&listFilter, "filter", "f", "", "Vikunja filter query (e.g., \"priority >= 3\")")
+	listCmd.Flags().StringVarP(&listSearch, "search", "s", "", "Search in task text")
+	listCmd.Flags().StringVar(&listSortBy, "sort", "", "Sort by field (id, title, due_date, priority, created, updated)")
+	listCmd.Flags().StringVar(&listOrderBy, "order", "", "Sort order (asc, desc)")
 
 	// get
 	getCmd := &cobra.Command{
@@ -160,6 +182,7 @@ func RegisterCommands(c *client.Client, printJSON func(interface{}) error) *cobr
 	var updatePercent int
 	var updateDone bool
 	var updateUndone bool
+	var updateProjectID int64
 	updateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update a task",
@@ -171,8 +194,8 @@ func RegisterCommands(c *client.Client, printJSON func(interface{}) error) *cobr
 			if updateTitle != "" {
 				req.Title = updateTitle
 			}
-			if updateDescription != "" {
-				req.Description = updateDescription
+			if cmd.Flags().Changed("description") {
+				req.Description = &updateDescription
 			}
 			if cmd.Flags().Changed("priority") {
 				req.Priority = &updatePriority
@@ -209,6 +232,9 @@ func RegisterCommands(c *client.Client, printJSON func(interface{}) error) *cobr
 				done := false
 				req.Done = &done
 			}
+			if cmd.Flags().Changed("project") {
+				req.ProjectID = &updateProjectID
+			}
 			task, err := service.Update(updateID, req)
 			if err != nil {
 				return err
@@ -229,6 +255,7 @@ func RegisterCommands(c *client.Client, printJSON func(interface{}) error) *cobr
 	updateCmd.Flags().IntVar(&updatePercent, "percent", 0, "Percent done (0-100)")
 	updateCmd.Flags().BoolVar(&updateDone, "done", false, "Mark as done")
 	updateCmd.Flags().BoolVar(&updateUndone, "undone", false, "Mark as not done")
+	updateCmd.Flags().Int64VarP(&updateProjectID, "project", "p", 0, "Move to project ID")
 
 	// delete
 	deleteCmd := &cobra.Command{

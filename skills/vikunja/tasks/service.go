@@ -38,17 +38,54 @@ func NewService(c *client.Client) *Service {
 	return &Service{client: c}
 }
 
-// List retrieves tasks, optionally filtered by project
-func (s *Service) List(projectID int64, includeDone bool) ([]Task, error) {
+// ListOptions contains options for listing tasks
+type ListOptions struct {
+	ProjectID  int64
+	IncludeDone bool
+	Filter     string // Vikunja filter query (e.g., "priority >= 3")
+	Search     string // Search in task text
+	SortBy     string // Field to sort by (e.g., "due_date", "priority")
+	OrderBy    string // "asc" or "desc"
+}
+
+// List retrieves tasks with optional filters
+func (s *Service) List(opts ListOptions) ([]Task, error) {
 	var endpoint string
-	if projectID > 0 {
-		endpoint = fmt.Sprintf("/projects/%d/tasks", projectID)
+	var params []string
+
+	if opts.ProjectID > 0 {
+		endpoint = fmt.Sprintf("/projects/%d/tasks", opts.ProjectID)
 	} else {
-		endpoint = "/tasks"
+		endpoint = "/tasks/all"
 	}
 
-	if !includeDone {
-		endpoint += "?filter=done=false"
+	// Build filter
+	var filters []string
+	if !opts.IncludeDone {
+		filters = append(filters, "done = false")
+	}
+	if opts.Filter != "" {
+		filters = append(filters, opts.Filter)
+	}
+	if len(filters) > 0 {
+		params = append(params, "filter="+strings.Join(filters, " && "))
+	}
+
+	// Search
+	if opts.Search != "" {
+		params = append(params, "s="+opts.Search)
+	}
+
+	// Sorting
+	if opts.SortBy != "" {
+		params = append(params, "sort_by="+opts.SortBy)
+	}
+	if opts.OrderBy != "" {
+		params = append(params, "order_by="+opts.OrderBy)
+	}
+
+	if len(params) > 0 {
+		endpoint += "?" + strings.Join(params, "&")
 	}
 
 	data, err := s.client.Get(endpoint)
@@ -104,25 +141,62 @@ func (s *Service) Create(projectID int64, req CreateTaskRequest) (*Task, error) 
 }
 
 // Update updates an existing task
+// It first fetches the current task, applies changes, then sends the full object
 func (s *Service) Update(taskID int64, req UpdateTaskRequest) (*Task, error) {
+	// First, get the current task
+	task, err := s.Get(taskID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get task for update: %w", err)
+	}
+
+	// Apply changes to the task
+	if req.Title != "" {
+		task.Title = req.Title
+	}
+	if req.Description != nil {
+		task.Description = *req.Description
+	}
+	if req.Priority != nil {
+		task.Priority = *req.Priority
+	}
+	if req.DueDate != "" {
+		task.DueDate = formatDate(req.DueDate)
+	}
+	if req.StartDate != "" {
+		task.StartDate = formatDate(req.StartDate)
+	}
+	if req.EndDate != "" {
+		task.EndDate = formatDate(req.EndDate)
+	}
+	if req.HexColor != "" {
+		task.HexColor = req.HexColor
+	}
+	if req.IsFavorite != nil {
+		task.IsFavorite = *req.IsFavorite
+	}
+	if req.PercentDone != nil {
+		task.PercentDone = *req.PercentDone
+	}
+	if req.Done != nil {
+		task.Done = *req.Done
+	}
+	if req.ProjectID != nil {
+		task.ProjectID = *req.ProjectID
+	}
+
+	// Send the full task object
 	endpoint := fmt.Sprintf("/tasks/%d", taskID)
-
-	// Format dates to RFC3339
-	req.DueDate = formatDate(req.DueDate)
-	req.StartDate = formatDate(req.StartDate)
-	req.EndDate = formatDate(req.EndDate)
-
-	data, err := s.client.Post(endpoint, req)
+	data, err := s.client.Post(endpoint, task)
 	if err != nil {
 		return nil, err
 	}
 
-	var task Task
-	if err := json.Unmarshal(data, &task); err != nil {
+	var updatedTask Task
+	if err := json.Unmarshal(data, &updatedTask); err != nil {
 		return nil, fmt.Errorf("failed to parse updated task: %w", err)
 	}
 
-	return &task, nil
+	return &updatedTask, nil
 }
 
 // Done marks a task as done

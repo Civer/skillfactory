@@ -65,10 +65,11 @@ type CreateTaskRequest struct {
 	PercentDone float64 `json:"percent_done,omitempty"`
 }
 
-// UpdateTaskRequest represents a task update request
+// UpdateTaskRequest represents fields to update on a task
+// Note: These are applied to an existing task before sending the full object to the API
 type UpdateTaskRequest struct {
 	Title       string   `json:"title,omitempty"`
-	Description string   `json:"description,omitempty"`
+	Description *string  `json:"description,omitempty"` // Pointer to distinguish empty from unset
 	Priority    *int     `json:"priority,omitempty"`
 	DueDate     string   `json:"due_date,omitempty"`
 	StartDate   string   `json:"start_date,omitempty"`
@@ -77,6 +78,7 @@ type UpdateTaskRequest struct {
 	IsFavorite  *bool    `json:"is_favorite,omitempty"`
 	PercentDone *float64 `json:"percent_done,omitempty"`
 	Done        *bool    `json:"done,omitempty"`
+	ProjectID   *int64   `json:"project_id,omitempty"` // For moving tasks between projects
 }
 
 // ToLean converts a full Task to lean output
