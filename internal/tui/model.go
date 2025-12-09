@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/petervogelmann/skillfactory/internal/config"
 	"github.com/petervogelmann/skillfactory/internal/skill"
 )
 
@@ -48,6 +49,9 @@ type Model struct {
 	skillsFolder    string // Base folder for skills (e.g., /path/to/.claude/skills/)
 	skillFolderName string // Subfolder name for this skill (default: skill name)
 
+	// Persistent config
+	config *config.Config
+
 	// Configured values
 	configValues map[string]string
 
@@ -74,6 +78,9 @@ func NewModel(projectRoot string, version string) Model {
 		skillErrors = []skill.SkillError{}
 	}
 
+	// Load persistent config
+	cfg, _ := config.Load()
+
 	return Model{
 		projectRoot:  projectRoot,
 		version:      version,
@@ -81,6 +88,8 @@ func NewModel(projectRoot string, version string) Model {
 		skillErrors:  skillErrors,
 		currentView:  ViewSkillList,
 		configValues: make(map[string]string),
+		config:       cfg,
+		skillsFolder: cfg.SkillsFolder, // Pre-fill from saved config
 	}
 }
 
@@ -466,6 +475,12 @@ func (m *Model) saveConfigInputs() {
 func (m *Model) saveDeployInputs() {
 	m.skillsFolder = m.deployInputs[0].Value()
 	m.skillFolderName = m.deployInputs[1].Value()
+
+	// Persist skills folder for next session
+	if m.config != nil && m.skillsFolder != "" {
+		m.config.SkillsFolder = m.skillsFolder
+		_ = m.config.Save()
+	}
 }
 
 // getDeployPath returns the full deploy path (skillsFolder + skillFolderName)
