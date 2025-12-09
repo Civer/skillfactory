@@ -4,6 +4,7 @@ package tasks
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -51,13 +52,15 @@ type ListOptions struct {
 // List retrieves tasks with optional filters
 func (s *Service) List(opts ListOptions) ([]Task, error) {
 	var endpoint string
-	var params []string
 
 	if opts.ProjectID > 0 {
 		endpoint = fmt.Sprintf("/projects/%d/tasks", opts.ProjectID)
 	} else {
 		endpoint = "/tasks/all"
 	}
+
+	// Build query parameters with proper URL encoding
+	params := url.Values{}
 
 	// Build filter
 	var filters []string
@@ -68,24 +71,24 @@ func (s *Service) List(opts ListOptions) ([]Task, error) {
 		filters = append(filters, opts.Filter)
 	}
 	if len(filters) > 0 {
-		params = append(params, "filter="+strings.Join(filters, " && "))
+		params.Set("filter", strings.Join(filters, " && "))
 	}
 
 	// Search
 	if opts.Search != "" {
-		params = append(params, "s="+opts.Search)
+		params.Set("s", opts.Search)
 	}
 
 	// Sorting
 	if opts.SortBy != "" {
-		params = append(params, "sort_by="+opts.SortBy)
+		params.Set("sort_by", opts.SortBy)
 	}
 	if opts.OrderBy != "" {
-		params = append(params, "order_by="+opts.OrderBy)
+		params.Set("order_by", opts.OrderBy)
 	}
 
 	if len(params) > 0 {
-		endpoint += "?" + strings.Join(params, "&")
+		endpoint += "?" + params.Encode()
 	}
 
 	data, err := s.client.Get(endpoint)
