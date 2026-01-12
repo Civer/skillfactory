@@ -20,10 +20,17 @@ func NewService(c *client.Client) *Service {
 }
 
 // List retrieves all active habits
-func (s *Service) List(categoryID string) ([]Habit, error) {
+func (s *Service) List(categoryID string, today bool) ([]Habit, error) {
 	endpoint := "/habits"
+	params := url.Values{}
 	if categoryID != "" {
-		endpoint += "?category=" + url.QueryEscape(categoryID)
+		params.Set("category", categoryID)
+	}
+	if today {
+		params.Set("today", "true")
+	}
+	if len(params) > 0 {
+		endpoint += "?" + params.Encode()
 	}
 
 	data, err := s.client.Get(endpoint)
@@ -131,8 +138,11 @@ func (s *Service) Delete(habitID string) error {
 }
 
 // GetStats retrieves statistics for a habit
-func (s *Service) GetStats(habitID string) (*HabitStats, error) {
+func (s *Service) GetStats(habitID string, today bool) (*HabitStats, error) {
 	endpoint := fmt.Sprintf("/habits/%s/stats", habitID)
+	if today {
+		endpoint += "?today=true"
+	}
 
 	data, err := s.client.Get(endpoint)
 	if err != nil {
@@ -145,6 +155,12 @@ func (s *Service) GetStats(habitID string) (*HabitStats, error) {
 	}
 
 	return &stats, nil
+}
+
+// Reorder reorders habits
+func (s *Service) Reorder(ids []string) error {
+	_, err := s.client.Put("/habits/reorder", map[string][]string{"ids": ids})
+	return err
 }
 
 // Check records a check-in for a habit

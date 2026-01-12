@@ -21,11 +21,12 @@ func RegisterCommands(c *client.Client, printJSON func(interface{}) error) *cobr
 
 	// list - active habits only
 	var listCategory string
+	var listToday bool
 	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List active habits",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			habits, err := service.List(listCategory)
+			habits, err := service.List(listCategory, listToday)
 			if err != nil {
 				return err
 			}
@@ -33,6 +34,7 @@ func RegisterCommands(c *client.Client, printJSON func(interface{}) error) *cobr
 		},
 	}
 	listCmd.Flags().StringVarP(&listCategory, "category", "c", "", "Filter by category ID")
+	listCmd.Flags().BoolVarP(&listToday, "today", "t", false, "Only show habits due today")
 
 	// list-all - including archived
 	var listAllCategory string
@@ -257,6 +259,7 @@ Active days (for WEEKLY/CUSTOM):
 	}
 
 	// stats
+	var statsToday bool
 	statsCmd := &cobra.Command{
 		Use:   "stats [id]",
 		Short: "Get habit statistics",
@@ -267,11 +270,26 @@ Active days (for WEEKLY/CUSTOM):
   - total_checkins: Total number of completed check-ins`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			stats, err := service.GetStats(args[0])
+			stats, err := service.GetStats(args[0], statsToday)
 			if err != nil {
 				return err
 			}
 			return printJSON(stats)
+		},
+	}
+	statsCmd.Flags().BoolVarP(&statsToday, "today", "t", false, "Include today's check-in status")
+
+	// reorder
+	reorderCmd := &cobra.Command{
+		Use:   "reorder [id1] [id2] ...",
+		Short: "Reorder habits",
+		Long:  "Reorder habits by providing habit IDs in the desired order.",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := service.Reorder(args); err != nil {
+				return err
+			}
+			return printJSON(map[string]bool{"reordered": true})
 		},
 	}
 
@@ -380,6 +398,7 @@ Skipped check-ins behavior depends on user settings:
 		updateCmd,
 		deleteCmd,
 		statsCmd,
+		reorderCmd,
 		checkCmd,
 		uncheckCmd,
 		skipCmd,

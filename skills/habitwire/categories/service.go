@@ -88,3 +88,9 @@ func (s *Service) Delete(categoryID string) error {
 	_, err := s.client.Delete(endpoint)
 	return err
 }
+
+// Reorder reorders categories
+func (s *Service) Reorder(ids []string) error {
+	_, err := s.client.Put("/categories/reorder", map[string][]string{"ids": ids})
+	return err
+}

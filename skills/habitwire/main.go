@@ -10,6 +10,8 @@ import (
 	"habitwire/categories"
 	"habitwire/client"
 	"habitwire/habits"
+	"habitwire/keys"
+	"habitwire/system"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -36,6 +38,9 @@ func main() {
 		rootCmd.AddCommand(
 			habits.RegisterCommands(nil, printJSON),
 			categories.RegisterCommands(nil, printJSON),
+			keys.RegisterCommands(nil, printJSON),
+			system.RegisterHealthCommand(nil, printJSON),
+			system.RegisterExportCommand(nil, printJSON),
 		)
 		// Only fail if actually trying to run a command
 		rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
@@ -45,6 +50,9 @@ func main() {
 		rootCmd.AddCommand(
 			habits.RegisterCommands(apiClient, printJSON),
 			categories.RegisterCommands(apiClient, printJSON),
+			keys.RegisterCommands(apiClient, printJSON),
+			system.RegisterHealthCommand(apiClient, printJSON),
+			system.RegisterExportCommand(apiClient, printJSON),
 		)
 	}
 

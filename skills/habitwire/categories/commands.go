@@ -124,6 +124,20 @@ func RegisterCommands(c *client.Client, printJSON func(interface{}) error) *cobr
 		},
 	}
 
-	cmd.AddCommand(listCmd, getCmd, createCmd, updateCmd, deleteCmd)
+	// reorder
+	reorderCmd := &cobra.Command{
+		Use:   "reorder [id1] [id2] ...",
+		Short: "Reorder categories",
+		Long:  "Reorder categories by providing category IDs in the desired order.",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := service.Reorder(args); err != nil {
+				return err
+			}
+			return printJSON(map[string]bool{"reordered": true})
+		},
+	}
+
+	cmd.AddCommand(listCmd, getCmd, createCmd, updateCmd, deleteCmd, reorderCmd)
 	return cmd
 }
